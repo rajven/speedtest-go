@@ -86,7 +86,6 @@ func Load(configPath string) Config {
         viper.SetEnvPrefix("speedtest")
         viper.AutomaticEnv()
 
-        // Добавлена строка с обработкой ошибки чтения конфига
         if err := viper.ReadInConfig(); err != nil {
             log.Fatalf("Error reading config file: %v", err)
         }

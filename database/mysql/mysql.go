@@ -20,20 +20,37 @@ type MySQL struct {
 }
 
 func Open(hostname, username, password, database string) *MySQL {
-    normalizedHost := hostname
-    if !strings.Contains(hostname, ":") {
-        normalizedHost = hostname + ":3306"
+    var connStr string
+    var connType string
+
+    // Defining the connection type: Unix socket or TCP
+    if strings.HasPrefix(hostname, "/") {
+        // Unix socket
+        connType = "unix"
+        connStr = fmt.Sprintf(
+            `%s:%s@unix(%s)/%s?parseTime=true&timeout=5s&charset=utf8mb4`,
+            username,
+            password,
+            hostname,
+            database,
+        )
+        log.Printf("Connecting to MySQL via Unix socket: %s", hostname)
+    } else {
+        // IP
+        connType = "tcp"
+        normalizedHost := hostname
+        if !strings.Contains(hostname, ":") {
+            normalizedHost = hostname + ":3306"
+        }
+        connStr = fmt.Sprintf(
+            connectionStringTemplate,
+            username,
+            password,
+            normalizedHost,
+            database,
+        )
+        log.Printf("Connecting to MySQL via %s at %s", connType, normalizedHost)
     }
-
-    connStr := fmt.Sprintf(
-        connectionStringTemplate,
-        username,
-        password,
-        normalizedHost,
-        database,
-    )
-
-    log.Printf("Connecting to MySQL at %s", normalizedHost)
 
     conn, err := sql.Open("mysql", connStr)
     if err != nil {
