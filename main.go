@@ -1,7 +1,6 @@
 package main
 
 import (
-	"flag"
 	_ "time/tzdata"
 
 	"github.com/librespeed/speedtest/config"
@@ -13,13 +12,8 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-var (
-	optConfig = flag.String("c", "", "config file to be used, defaults to settings.toml in the same directory")
-)
-
 func main() {
-	flag.Parse()
-	conf := config.Load(*optConfig)
+	conf := config.Load(config.GetConfigFile())
 	web.SetServerLocation(&conf)
 	results.Initialize(&conf)
 	database.SetDBInfo(&conf)

@@ -23,18 +23,44 @@ type DataAccess interface {
 }
 
 func SetDBInfo(conf *config.Config) {
-	switch conf.DatabaseType {
-	case "postgresql":
-		DB = postgresql.Open(conf.DatabaseHostname, conf.DatabaseUsername, conf.DatabasePassword, conf.DatabaseName)
-	case "mysql":
-		DB = mysql.Open(conf.DatabaseHostname, conf.DatabaseUsername, conf.DatabasePassword, conf.DatabaseName)
-	case "bolt":
-		DB = bolt.Open(conf.DatabaseFile)
-	case "memory":
-		DB = memory.Open("")
-	case "none":
-		DB = none.Open("")
-	default:
-		log.Fatalf("Unsupported database type: %s", conf.DatabaseType)
-	}
+    switch conf.DatabaseType {
+    case "postgresql":
+	log.Infof("Connecting to PostgreSQL database at %s as user %s to database '%s'", 
+	    conf.DatabaseHostname,
+	    conf.DatabaseUsername,
+	    conf.DatabaseName)
+	DB = postgresql.Open(conf.DatabaseHostname, conf.DatabaseUsername, conf.DatabasePassword, conf.DatabaseName)
+
+    case "mysql":
+	log.Infof("Connecting to MySQL database at %s as user %s to database '%s'", 
+	    conf.DatabaseHostname,
+	    conf.DatabaseUsername,
+	    conf.DatabaseName)
+	DB = mysql.Open(conf.DatabaseHostname, conf.DatabaseUsername, conf.DatabasePassword, conf.DatabaseName)
+
+    case "bolt":
+	log.Infof("Opening BoltDB file at %s", conf.DatabaseFile)
+	DB = bolt.Open(conf.DatabaseFile)
+
+    case "memory":
+	log.Info("Using in-memory database")
+	DB = memory.Open("")
+
+    case "none":
+	log.Info("Database functionality disabled (none)")
+	DB = none.Open("")
+
+    default:
+	log.Fatalf("Unsupported database type: %s", conf.DatabaseType)
+    }
+
+    if DB != nil {
+	log.Infof("Successfully connected to %s database '%s'", 
+	    conf.DatabaseType,
+	    conf.DatabaseName)
+    } else {
+	log.Errorf("Failed to connect to %s database '%s'", 
+	    conf.DatabaseType,
+	    conf.DatabaseName)
+    }
 }

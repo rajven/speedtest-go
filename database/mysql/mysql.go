@@ -3,6 +3,7 @@ package mysql
 import (
 	"database/sql"
 	"fmt"
+	"strings"
 
 	"github.com/librespeed/speedtest/database/schema"
 
@@ -11,7 +12,7 @@ import (
 )
 
 const (
-	connectionStringTemplate = `%s:%s@%s/%s?parseTime=true`
+	connectionStringTemplate = `%s:%s@tcp(%s)/%s?parseTime=true&timeout=5s&charset=utf8mb4`
 )
 
 type MySQL struct {
@@ -19,12 +20,31 @@ type MySQL struct {
 }
 
 func Open(hostname, username, password, database string) *MySQL {
-	connStr := fmt.Sprintf(connectionStringTemplate, username, password, hostname, database)
-	conn, err := sql.Open("mysql", connStr)
-	if err != nil {
-		log.Fatalf("Cannot open MySQL database: %s", err)
-	}
-	return &MySQL{db: conn}
+    normalizedHost := hostname
+    if !strings.Contains(hostname, ":") {
+        normalizedHost = hostname + ":3306"
+    }
+
+    connStr := fmt.Sprintf(
+        connectionStringTemplate,
+        username,
+        password,
+        normalizedHost,
+        database,
+    )
+
+    log.Printf("Connecting to MySQL at %s", normalizedHost)
+
+    conn, err := sql.Open("mysql", connStr)
+    if err != nil {
+        log.Fatalf("MySQL connection error: %v", err)
+    }
+
+    if err := conn.Ping(); err != nil {
+        log.Fatalf("MySQL ping failed: %v", err)
+    }
+
+    return &MySQL{db: conn}
 }
 
 func (p *MySQL) Insert(data *schema.TelemetryData) error {
